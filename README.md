@@ -4,6 +4,10 @@ An AI-powered PDF question-answering application built using Python, Streamlit, 
 
 DocuMind AI allows users to upload PDF documents and ask questions about their contents. It retrieves relevant passages from the uploaded documents and uses a language model to generate context-based answers.
 
+## 📸 Application Preview
+
+![DocuMind AI Application](screenshots/documind-ai.png)
+
 ## 🚀 Features
 
 - **Multiple PDF Uploads:** Upload multiple PDF documents for analysis.
