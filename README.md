@@ -1,17 +1,10 @@
 # DocuMind AI — Chat with Your PDFs
 
-DocuMind AI is a local AI-powered PDF chatbot that allows users to upload documents and ask questions in natural language. It uses Retrieval-Augmented Generation (RAG) to retrieve relevant information from PDF files and generate answers with source-page references.
+An AI-powered PDF chatbot that lets you upload PDF documents and ask questions using Retrieval-Augmented Generation (RAG).
 
-The project combines Python, Streamlit, LangChain, FAISS, and Ollama to provide a document question-answering experience without relying on paid cloud AI APIs.
+## Application Preview
 
-##  Application Preview
-
-![DocuMind AI Application Preview](screenshots/documind-ai.png.png)
-
-<!-- Add a screenshot of your working application -->
-<!-- Save it as screenshot/documind-ai.png.pngf
-
-![DocuMind AI Application Preview](screenshots/documind-ai.png.png)
+![DocuMind AI Application Preview](https://raw.githubusercontent.com/Sai0419/DocuMind-AI/main/screenshot/documind-ai.png.png)
 
 ## Features
 
