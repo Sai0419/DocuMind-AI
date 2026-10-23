@@ -185,7 +185,7 @@ The screenshot and secrets paths shown above should exist locally as appropriate
 
 **## Live Demo
 
-[**Launch DocuMind AI**](https://order-garage-ferry-dayton.trycloudflare.com)
+[**Launch DocuMind AI**][(https://order-garage-ferry-dayton.trycloudflare.com)](https://locks-neural-boards-payments.trycloudflare.com)
 
 **Note:** This is a temporary demo hosted through a Cloudflare Quick Tunnel. The application is available only while the local Streamlit app and Cloudflare tunnel are running.
 
