@@ -22,6 +22,42 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# --------------------------------------------------
+# PASSWORD PROTECTION
+# --------------------------------------------------
+
+def check_password():
+    def password_entered():
+        entered_password = st.session_state["password_input"]
+        expected_password = st.secrets["auth"]["password"]
+
+        if entered_password == expected_password:
+            st.session_state["authenticated"] = True
+        else:
+            st.session_state["authenticated"] = False
+
+    if st.session_state.get("authenticated", False):
+        return True
+
+    st.title("🔐 DocuMind AI Login")
+    st.write("Enter your password to access the application.")
+
+    st.text_input(
+        "Password",
+        type="password",
+        key="password_input",
+        on_change=password_entered,
+    )
+
+    if st.session_state.get("authenticated") is False:
+        st.error("Incorrect password. Please try again.")
+
+    return False
+
+
+if not check_password():
+    st.stop()
+
 
 # --------------------------------------------------
 # 2. CUSTOM CSS
