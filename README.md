@@ -177,9 +177,7 @@ DocuMind-AI/
 
 The screenshot and secrets paths shown above should exist locally as appropriate. The secrets file must remain excluded from Git.
 
-## Live Demo
-
-**## ## Live Demo
+#### Live Demo
 
 [**Launch DocuMind AI**](https://locks-neural-boards-payments.trycloudflare.com/)
 
