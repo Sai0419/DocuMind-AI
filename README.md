@@ -177,9 +177,9 @@ DocuMind-AI/
 
 The screenshot and secrets paths shown above should exist locally as appropriate. The secrets file must remain excluded from Git.
 
-#### Live Demo
+## Live Demo
 
-[**Launch DocuMind AI**](https://locks-neural-boards-payments.trycloudflare.com/)
+[Launch DocuMind AI](https://locks-neural-boards-payments.trycloudflare.com/)
 
 **Note:** This is a temporary demo hosted through a Cloudflare Quick Tunnel. The application is available only while the local Streamlit app and Cloudflare tunnel are running. The URL may change when the tunnel restarts.
 
