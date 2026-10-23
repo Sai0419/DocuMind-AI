@@ -9,7 +9,7 @@ The project combines Python, Streamlit, LangChain, FAISS, and Ollama to provide 
 ![DocuMind AI Application Preview](screenshots/documind-ai.png.png)
 
 <!-- Add a screenshot of your working application -->
-<!-- Save it as screenshots/documind-preview.png -->
+<!-- Save it as screenshot/documind-ai.png.pngf
 
 ![DocuMind AI Application Preview](screenshots/documind-ai.png.png)
 
@@ -166,7 +166,7 @@ Open the local URL displayed in the terminal. By default, Streamlit commonly use
 - Retrieve relevant details from lengthy documents.
 - Ask questions about uploaded reports and reference materials.
 
-## Project Structure
+## ## Project Structure
 
 ```text
 DocuMind-AI/
@@ -177,8 +177,9 @@ DocuMind-AI/
 ├── requirements.txt       # Python dependencies
 ├── README.md              # Project documentation
 ├── .gitignore             # Excluded files and secrets
-└── screenshots/
-    └── documind-preview.png
+└── screenshot/
+    └── documind-ai.png.png
+```
 ```
 
 The screenshot and secrets paths shown above should exist locally as appropriate. The secrets file must remain excluded from Git.
