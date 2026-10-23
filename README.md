@@ -183,11 +183,13 @@ The screenshot and secrets paths shown above should exist locally as appropriate
 
 ## Live Demo
 
-**Live Demo:** Add your active demo URL here.
+**## Live Demo
 
-The demo may use a temporary public tunnel connected to the local application. In that case, the computer, application, internet connection, and tunnel must remain active. The URL may change when the tunnel restarts.
+[**Launch DocuMind AI**](https://order-garage-ferry-dayton.trycloudflare.com)
 
-For security, do not upload confidential PDFs or expose local services such as the Ollama API directly to the internet.
+**Note:** This is a temporary demo hosted through a Cloudflare Quick Tunnel. The application is available only while the local Streamlit app and Cloudflare tunnel are running.
+
+The computer and internet connection must remain active. The URL may change when the tunnel restarts.
 
 ## Source Code
 
