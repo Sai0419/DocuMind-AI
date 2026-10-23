@@ -4,7 +4,9 @@ DocuMind AI is a local AI-powered PDF chatbot that allows users to upload docume
 
 The project combines Python, Streamlit, LangChain, FAISS, and Ollama to provide a document question-answering experience without relying on paid cloud AI APIs.
 
-## Application Preview
+##  Application Preview
+
+![DocuMind AI Application Preview](screenshots/documind-ai.png.png)
 
 <!-- Add a screenshot of your working application -->
 <!-- Save it as screenshots/documind-preview.png -->
