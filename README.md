@@ -9,7 +9,7 @@ The project combines Python, Streamlit, LangChain, FAISS, and Ollama to provide 
 <!-- Add a screenshot of your working application -->
 <!-- Save it as screenshots/documind-preview.png -->
 
-![DocuMind AI Application Preview](screenshots/documind-preview.png)
+![DocuMind AI Application Preview](screenshots/documind-ai.png.png)
 
 ## Features
 
