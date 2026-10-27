@@ -185,7 +185,7 @@ st.markdown(
 # 3. OLLAMA MODELS
 # --------------------------------------------------
 
-EMBEDDING_MODEL = "nomic-embed-text"
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 CHAT_MODEL = "qwen2.5:1.5b"
 
 
