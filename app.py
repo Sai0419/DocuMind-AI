@@ -6,7 +6,8 @@ import streamlit as st
 from pypdf import PdfReader
 
 from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings, ChatOllama
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.prompts import ChatPromptTemplate
 
