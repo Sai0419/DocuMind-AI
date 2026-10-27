@@ -196,7 +196,7 @@ def get_embeddings():
 
 @st.cache_resource
 def get_chat_model():
-    return ChatOllama(
+    return ChatGoogleGenerativeAI(
         model=CHAT_MODEL,
         temperature=0,
     )
