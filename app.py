@@ -191,7 +191,11 @@ CHAT_MODEL = "qwen2.5:1.5b"
 
 @st.cache_resource
 def get_embeddings():
-    return OllamaEmbeddings(model=EMBEDDING_MODEL)
+    return HuggingFaceEmbeddings(
+        model_name=EMBEDDING_MODEL,
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
+    )
 
 
 @st.cache_resource
