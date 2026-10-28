@@ -178,8 +178,7 @@ FALLBACK_MESSAGE = (
 # --------------------------------------------------
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-CHAT_MODEL = "qwen2.5:1.5b"
-
+CHAT_MODEL = "gemini-2.5-flash"
 @st.cache_resource
 def get_embeddings():
     return HuggingFaceEmbeddings(
