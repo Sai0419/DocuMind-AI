@@ -1,19 +1,16 @@
 
 import hashlib
+import re
 from io import BytesIO
 
 import streamlit as st
 from pypdf import PdfReader
-
 from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings, ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
-
-
-# --------------------------------------------------
-# 1. PAGE CONFIGURATION
-# --------------------------------------------------
 
 st.set_page_config(
     page_title="DocuMind AI",
@@ -22,26 +19,20 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# --------------------------------------------------
-# PASSWORD PROTECTION
-# --------------------------------------------------
+# -------------------- LOGIN --------------------
 
 def check_password():
     def password_entered():
-        entered_password = st.session_state["password_input"]
-        expected_password = st.secrets["auth"]["password"]
-
-        if entered_password == expected_password:
-            st.session_state["authenticated"] = True
-        else:
-            st.session_state["authenticated"] = False
+        st.session_state["authenticated"] = (
+            st.session_state["password_input"]
+            == st.secrets["auth"]["password"]
+        )
 
     if st.session_state.get("authenticated", False):
         return True
 
     st.title("🔐 DocuMind AI Login")
     st.write("Enter your password to access the application.")
-
     st.text_input(
         "Password",
         type="password",
@@ -58,181 +49,211 @@ def check_password():
 if not check_password():
     st.stop()
 
-
-# --------------------------------------------------
-# 2. CUSTOM CSS
-# --------------------------------------------------
-
-
-# --------------------------------------------------
-# 2. CUSTOM CSS
-# --------------------------------------------------
+# -------------------- STYLING --------------------
 
 st.markdown(
     """
     <style>
-    /* Main page */
-    .stApp {
-        background-color: #f8fafc;
-        color: #1e293b;
-    }
-
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: #eaf0f8;
-    }
-
-    [data-testid="stSidebar"] * {
-        color: #1e293b;
-    }
-
-    /* Main text */
-    .stMarkdown,
-    .stMarkdown p,
-    .stMarkdown li,
-    label,
-    [data-testid="stCaptionContainer"] {
-        color: #1e293b;
-    }
-
-    /* Hero banner */
+    .stApp {background:#f8fafc;color:#1e293b}
+    [data-testid="stSidebar"] {background:#eaf0f8}
+    [data-testid="stSidebar"] * {color:#1e293b}
+    .stMarkdown,.stMarkdown p,.stMarkdown li,label,
+    [data-testid="stCaptionContainer"] {color:#1e293b}
     .hero {
-        padding: 30px;
-        border-radius: 18px;
-        background: linear-gradient(135deg, #dbeafe, #e0e7ff);
-        border: 1px solid #c7d2fe;
-        margin-bottom: 25px;
+        padding:30px;
+        border-radius:18px;
+        background:linear-gradient(135deg,#dbeafe,#e0e7ff);
+        border:1px solid #c7d2fe;
+        margin-bottom:25px
     }
-
-    .hero h1 {
-        color: #1e3a8a;
-        font-size: 38px;
-        margin-bottom: 8px;
-    }
-
-    .hero p {
-        color: #334155;
-        font-size: 16px;
-    }
-
-    /* Feature cards */
+    .hero h1 {color:#1e3a8a;font-size:38px;margin-bottom:8px}
+    .hero p {color:#334155;font-size:16px}
     .feature-card {
-        background-color: #ffffff;
-        border: 1px solid #dbe3ef;
-        border-radius: 12px;
-        padding: 18px;
-        min-height: 115px;
+        background:#fff;
+        border:1px solid #dbe3ef;
+        border-radius:12px;
+        padding:18px;
+        min-height:115px
     }
-
-    .feature-card h4 {
-        color: #3730a3;
-        margin-bottom: 8px;
-    }
-
-    .feature-card p {
-        color: #475569;
-        font-size: 14px;
-    }
-
-    .small-muted {
-        color: #475569;
-        font-size: 13px;
-    }
-
-    /* Chat messages */
+    .feature-card h4 {color:#3730a3;margin-bottom:8px}
+    .feature-card p,.small-muted {color:#475569;font-size:14px}
     div[data-testid="stChatMessage"] {
-        background-color: #ffffff;
-        border: 1px solid #dbe3ef;
-        border-radius: 12px;
-        padding: 12px;
+        background:#fff;
+        border:1px solid #dbe3ef;
+        border-radius:12px;
+        padding:12px
     }
-
-    /* Input fields */
-    [data-testid="stChatInput"] textarea {
-        background-color: #ffffff;
-        color: #1e293b;
-    }
-
+    [data-testid="stChatInput"] textarea {background:#fff;color:#1e293b}
     [data-testid="stFileUploader"] {
-        background-color: #ffffff;
-        border-radius: 10px;
-        padding: 8px;
+        background:#fff;
+        border-radius:10px;
+        padding:8px
+    }
+    div.stButton>button {
+        background:#fff;
+        color:#1e3a8a;
+        border-radius:9px;
+        border:1px solid #c7d2fe
+    }
+    div.stButton>button:hover {
+
+        div.stButton>button:hover {
+        background:#e0e7ff;
+        color:#1e3a8a;
+        border-color:#818cf8
     }
 
-    /* Buttons */
-    div.stButton > button {
-        background-color: #ffffff;
-        color: #1e3a8a;
-        border-radius: 9px;
-        border: 1px solid #c7d2fe;
-    }
+    /* Mobile responsive design */
+    @media screen and (max-width: 768px) {
+        .hero {
+            padding: 18px;
+            margin-bottom: 16px;
+            border-radius: 14px;
+        }
 
-    div.stButton > button:hover {
-        background-color: #e0e7ff;
-        color: #1e3a8a;
-        border-color: #818cf8;
+        .hero h1 {
+            font-size: 27px;
+            line-height: 1.25;
+        }
+
+        .hero p {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .feature-card {
+            padding: 12px;
+            min-height: auto;
+            margin-bottom: 10px;
+        }
+
+        .feature-card h4 {
+            font-size: 16px;
+        }
+
+        .feature-card p {
+            font-size: 13px;
+        }
+
+        div.stButton > button {
+            min-height: 44px;
+            white-space: normal;
+        }
+
+        [data-testid="stChatMessage"] {
+            padding: 10px;
+            overflow-wrap: anywhere;
+        }
+
+        .block-container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            padding-top: 1rem;
+        }
+    }
+    </style>
+        background:#e0e7ff;
+        color:#1e3a8a;
+        border-color:#818cf8
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
+# -------------------- CONFIGURATION --------------------
 
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+CHAT_MODEL = "gemini-3.6-flash"
+FALLBACK_MESSAGE = (
+    "I couldn't find that information in the uploaded documents."
+)
 
-
-# --------------------------------------------------
-# 3. OLLAMA MODELS
-# --------------------------------------------------
-
-EMBEDDING_MODEL = "nomic-embed-text"
-CHAT_MODEL = "qwen2.5:1.5b"
-
+# -------------------- LOCAL EMBEDDINGS --------------------
 
 @st.cache_resource
 def get_embeddings():
-    return OllamaEmbeddings(model=EMBEDDING_MODEL)
-
-
-@st.cache_resource
-def get_chat_model():
-    return ChatOllama(
-        model=CHAT_MODEL,
-        temperature=0,
+    return HuggingFaceEmbeddings(
+        model_name=EMBEDDING_MODEL,
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
     )
 
 
-# --------------------------------------------------
-# 4. SESSION STATE
-# --------------------------------------------------
+# -------------------- GEMINI CHAT MODEL --------------------
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-if "vector_store" not in st.session_state:
-    st.session_state.vector_store = None
-
-if "collection_hash" not in st.session_state:
-    st.session_state.collection_hash = None
-
-if "total_pages" not in st.session_state:
-    st.session_state.total_pages = 0
-
-if "total_chunks" not in st.session_state:
-    st.session_state.total_chunks = 0
-
-if "uploaded_names" not in st.session_state:
-    st.session_state.uploaded_names = []
+@st.cache_resource
+def get_chat_model():
+    return ChatGoogleGenerativeAI(
+        model=CHAT_MODEL,
+        temperature=0,
+        google_api_key=st.secrets["GOOGLE_API_KEY"],
+    )
 
 
-# --------------------------------------------------
-# 5. PDF PROCESSING AND VECTOR INDEX
-# --------------------------------------------------
+# -------------------- SESSION STATE --------------------
+
+DEFAULTS = {
+    "messages": [],
+    "vector_store": None,
+    "collection_hash": None,
+    "total_pages": 0,
+    "total_chunks": 0,
+    "uploaded_names": [],
+}
+
+for key, value in DEFAULTS.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+
+# -------------------- SOURCE CITATIONS --------------------
+
+def show_sources(sources):
+    if sources:
+        with st.expander("📎 View source citations"):
+            for item in sources:
+                st.write(
+                    f"📄 {item.get('source', 'Unknown PDF')} "
+                    f"— Page {item.get('page', 'Unknown')}"
+                )
+
+
+# -------------------- ANSWER CLEANING --------------------
+
+def clean_answer(text):
+    text = str(text or "").strip()
+    text = re.sub(r"(?m)^[ \t]*[-*][ \t]*$", "", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def extract_response_text(response):
+    content = response.content
+
+    if isinstance(content, str):
+        return clean_answer(content)
+
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                parts.append(item.get("text", ""))
+            elif isinstance(item, str):
+                parts.append(item)
+
+        return clean_answer("\n".join(parts))
+
+    return clean_answer(str(content))
+
+
+# -------------------- PDF INDEXING --------------------
 
 def build_vector_store(uploaded_files):
     documents = []
     file_names = []
     total_pages = 0
-    collection_hasher = hashlib.sha256()
+    hasher = hashlib.sha256()
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=700,
@@ -241,51 +262,39 @@ def build_vector_store(uploaded_files):
     )
 
     for uploaded_file in uploaded_files:
-        file_bytes = uploaded_file.getvalue()
-        file_name = uploaded_file.name
+        raw = uploaded_file.getvalue()
+        name = uploaded_file.name
 
-        file_names.append(file_name)
-
-        # Include both file name and contents in the hash.
-        collection_hasher.update(file_name.encode("utf-8"))
-        collection_hasher.update(file_bytes)
+        file_names.append(name)
+        hasher.update(name.encode("utf-8"))
+        hasher.update(raw)
 
         try:
-            pdf_reader = PdfReader(BytesIO(file_bytes))
+            reader = PdfReader(BytesIO(raw))
 
-            if pdf_reader.is_encrypted:
-                raise ValueError(
-                    "This PDF is password-protected."
-                )
+            if reader.is_encrypted:
+                raise ValueError("This PDF is password-protected.")
 
-            for page_number, page in enumerate(
-                pdf_reader.pages, start=1
-            ):
+            total_pages += len(reader.pages)
+
+            for page_no, page in enumerate(reader.pages, start=1):
                 page_text = page.extract_text() or ""
 
-                if not page_text.strip():
-                    continue
-
-                from langchain_core.documents import Document
-
-                documents.append(
-                    Document(
-                        page_content=page_text,
-                        metadata={
-                            "source": file_name,
-                            "page": page_number,
-                        },
+                if page_text.strip():
+                    documents.append(
+                        Document(
+                            page_content=page_text,
+                            metadata={
+                                "source": name,
+                                "page": page_no,
+                            },
+                        )
                     )
-                )
-
-            total_pages += len(pdf_reader.pages)
 
         except Exception as error:
-            st.warning(
-                f"Could not read {file_name}: {error}"
-            )
+            st.warning(f"Could not read {name}: {error}")
 
-    collection_hash = collection_hasher.hexdigest()
+    collection_hash = hasher.hexdigest()
 
     if not documents:
         return None, collection_hash, total_pages, 0, file_names
@@ -295,11 +304,10 @@ def build_vector_store(uploaded_files):
     if not chunks:
         return None, collection_hash, total_pages, 0, file_names
 
-    embeddings = get_embeddings()
-
+    # Embeddings are generated locally; this step does not use Gemini embeddings.
     vector_store = FAISS.from_documents(
-        documents=chunks,
-        embedding=embeddings,
+        chunks,
+        get_embeddings(),
     )
 
     return (
@@ -311,14 +319,11 @@ def build_vector_store(uploaded_files):
     )
 
 
-# --------------------------------------------------
-# 6. SIDEBAR
-# --------------------------------------------------
+# -------------------- SIDEBAR --------------------
 
 with st.sidebar:
     st.markdown("## 📚 DocuMind AI")
     st.caption("Your personal PDF assistant")
-
     st.divider()
 
     st.markdown("### 📄 Upload documents")
@@ -331,23 +336,10 @@ with st.sidebar:
     )
 
     st.divider()
-
     st.markdown("### 📊 Document statistics")
-
-    st.metric(
-        "PDF files",
-        len(st.session_state.uploaded_names),
-    )
-
-    st.metric(
-        "Total pages",
-        st.session_state.total_pages,
-    )
-
-    st.metric(
-        "Text chunks",
-        st.session_state.total_chunks,
-    )
+    st.metric("PDF files", len(st.session_state.uploaded_names))
+    st.metric("Total pages", st.session_state.total_pages)
+    st.metric("Text chunks", st.session_state.total_chunks)
 
     if st.session_state.uploaded_names:
         with st.expander("View uploaded files"):
@@ -356,10 +348,7 @@ with st.sidebar:
 
     st.divider()
 
-    if st.button(
-        "🗑️ Clear chat history",
-        use_container_width=True,
-    ):
+    if st.button("🗑️ Clear chat history", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
@@ -367,120 +356,80 @@ with st.sidebar:
     st.caption(f"Chat model: {CHAT_MODEL}")
     st.caption(f"Embedding model: {EMBEDDING_MODEL}")
     st.caption("Vector database: FAISS")
+    st.caption("Embeddings: Local HuggingFace model")
+    st.caption("Chat generation: Google Gemini API")
 
     st.divider()
-
     st.markdown(
-        """
-        <p class="small-muted">
-        Runs locally with Python, Streamlit and Ollama.
-        </p>
-        """,
+        '<p class="small-muted">'
+        'PDF embeddings run locally. Answer generation uses Gemini API.'
+        '</p>',
         unsafe_allow_html=True,
     )
 
 
-# --------------------------------------------------
-# 7. MAIN HEADER
-# --------------------------------------------------
+# -------------------- MAIN PAGE --------------------
 
 st.markdown(
     """
     <div class="hero">
-        <h1>📚 DocuMind AI</h1>
-        <p>
-        Chat with your PDF documents using Retrieval-Augmented
-        Generation (RAG), semantic search and conversation memory.
-        </p>
+      <h1>📚 DocuMind AI</h1>
+      <p>Chat with your PDF documents using Retrieval-Augmented Generation
+      (RAG), semantic search and conversation memory.</p>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
+cols = st.columns(3)
 
-# --------------------------------------------------
-# 8. FEATURE CARDS
-# --------------------------------------------------
+cards = [
+    ("📄 Document Search", "Retrieve relevant passages from your PDF files."),
+    ("🧠 Conversation Memory", "Ask follow-up questions using earlier conversation context."),
+    ("🔎 Source Citations", "Check which PDF and page support the answer."),
+]
 
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown(
-        """
-        <div class="feature-card">
-            <h4>📄 Document Search</h4>
-            <p>Retrieve relevant passages from your PDF files.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-with col2:
-    st.markdown(
-        """
-        <div class="feature-card">
-            <h4>🧠 Conversation Memory</h4>
-            <p>Ask follow-up questions using earlier conversation context.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-with col3:
-    st.markdown(
-        """
-        <div class="feature-card">
-            <h4>🔎 Source Citations</h4>
-            <p>Check which PDF and page support the answer.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+for col, (heading, body) in zip(cols, cards):
+    with col:
+        st.markdown(
+            f'<div class="feature-card"><h4>{heading}</h4>'
+            f'<p>{body}</p></div>',
+            unsafe_allow_html=True,
+        )
 
 st.write("")
 
-
-# --------------------------------------------------
-# 9. PROCESS UPLOADED PDF FILES
-# --------------------------------------------------
+# -------------------- BUILD OR UPDATE INDEX --------------------
 
 if uploaded_files:
     current_hasher = hashlib.sha256()
 
-    for uploaded_file in uploaded_files:
-        current_hasher.update(
-            uploaded_file.name.encode("utf-8")
-        )
-        current_hasher.update(uploaded_file.getvalue())
+    for file in uploaded_files:
+        current_hasher.update(file.name.encode("utf-8"))
+        current_hasher.update(file.getvalue())
 
     current_hash = current_hasher.hexdigest()
 
     if current_hash != st.session_state.collection_hash:
         with st.spinner(
-            "Reading PDFs and building the search index..."
+            "Reading PDFs and building the local search index..."
         ):
             try:
-                (
-                    new_vector_store,
-                    new_hash,
-                    total_pages,
-                    total_chunks,
-                    file_names,
-                ) = build_vector_store(uploaded_files)
+                store, new_hash, pages, chunks, names = build_vector_store(
+                    uploaded_files
+                )
 
-                st.session_state.vector_store = new_vector_store
-                st.session_state.collection_hash = current_hash
-                st.session_state.total_pages = total_pages
-                st.session_state.total_chunks = total_chunks
-                st.session_state.uploaded_names = file_names
-
-                # A new document collection starts a fresh chat.
+                st.session_state.vector_store = store
+                st.session_state.collection_hash = new_hash
+                st.session_state.total_pages = pages
+                st.session_state.total_chunks = chunks
+                st.session_state.uploaded_names = names
                 st.session_state.messages = []
 
-                if new_vector_store is not None:
+                if store is not None:
                     st.success(
-                        f"Indexed {total_chunks} text chunks "
-                        f"from {len(file_names)} PDF file(s)."
+                        f"Indexed {chunks} text chunks from "
+                        f"{len(names)} PDF file(s)."
                     )
                 else:
                     st.warning(
@@ -488,11 +437,13 @@ if uploaded_files:
                     )
 
             except Exception as error:
+                st.session_state.vector_store = None
                 st.error(
                     "Could not build the document index. "
-                    "Check that Ollama is running and the embedding "
-                    f"model is installed. Details: {error}"
+                    "Check the local embedding model installation and "
+                    f"available memory. Details: {error}"
                 )
+
 else:
     if st.session_state.collection_hash is not None:
         st.session_state.vector_store = None
@@ -503,58 +454,43 @@ else:
         st.session_state.messages = []
 
 
-# --------------------------------------------------
-# 10. SUGGESTED QUESTIONS
-# --------------------------------------------------
+# -------------------- SUGGESTED QUESTIONS --------------------
+
+selected_question = None
 
 if st.session_state.vector_store is not None:
     st.markdown("### 💡 Suggested questions")
 
     suggestion_cols = st.columns(3)
-
     suggestions = [
         "Summarize the document",
         "What are the main topics?",
         "Give me important points",
     ]
 
-    selected_question = None
-
-    for index, suggestion in enumerate(suggestions):
-        with suggestion_cols[index]:
+    for i, suggestion in enumerate(suggestions):
+        with suggestion_cols[i]:
             if st.button(
                 suggestion,
                 use_container_width=True,
-                key=f"suggestion_{index}",
+                key=f"suggestion_{i}",
             ):
                 selected_question = suggestion
 
     st.write("")
 
 
-# --------------------------------------------------
-# 11. DISPLAY PREVIOUS CHAT MESSAGES
-# --------------------------------------------------
+# -------------------- CHAT HISTORY --------------------
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
         if message["role"] == "assistant":
-            sources = message.get("sources", [])
-
-            if sources:
-                with st.expander("📎 View source citations"):
-                    for source in sources:
-                        st.markdown(
-                            f"- **{source['source']}** "
-                            f"— Page {source['page']}"
-                        )
+            show_sources(message.get("sources", []))
 
 
-# --------------------------------------------------
-# 12. CHAT INPUT
-# --------------------------------------------------
+# -------------------- QUESTION INPUT --------------------
 
 if st.session_state.vector_store is None:
     st.info(
@@ -566,115 +502,94 @@ else:
     typed_question = st.chat_input(
         "Ask a question about your documents..."
     )
-
     question = typed_question or selected_question
 
 
-# --------------------------------------------------
-# 13. RETRIEVAL + CONVERSATION MEMORY + ANSWERING
-# --------------------------------------------------
+# -------------------- QUESTION ANSWERING --------------------
 
-if question:
+if question and question.strip():
     question = question.strip()
 
-    if question:
-        # Save the current question.
-        st.session_state.messages.append(
-            {
-                "role": "user",
-                "content": question,
-            }
-        )
+    st.session_state.messages.append(
+        {"role": "user", "content": question}
+    )
 
-        with st.chat_message("user"):
-            st.markdown(question)
+    with st.chat_message("assistant"):
+        with st.spinner("Searching your PDFs and preparing an answer..."):
+            try:
+                scored_docs = (
+                    st.session_state.vector_store
+                    .similarity_search_with_score(question, k=6)
+                )
 
-        with st.chat_message("assistant"):
-            with st.spinner(
-                "Searching your PDFs and preparing an answer..."
-            ):
-                try:
-                    # Step A: Retrieve relevant document chunks.
-                    relevant_docs = (
-                        st.session_state.vector_store
-                        .similarity_search(question, k=6)
-)
+                retrieved_docs = [doc for doc, _score in scored_docs]
 
-                    # Step B: Build document context and source list.
+                if not retrieved_docs:
+                    answer, sources = FALLBACK_MESSAGE, []
+
+                else:
                     context_parts = []
                     sources = []
-                    seen_sources = set()
+                    seen = set()
 
-                    for document in relevant_docs:
-                        source_name = document.metadata.get(
-                            "source", "Unknown PDF"
-                        )
-                        page_number = document.metadata.get(
-                            "page", "Unknown"
-                        )
+                    for doc in retrieved_docs:
+                        source = doc.metadata.get("source", "Unknown PDF")
+                        page = doc.metadata.get("page", "Unknown")
 
                         context_parts.append(
-                            f"[Source: {source_name}, "
-                            f"Page: {page_number}]\n"
-                            f"{document.page_content}"
+                            f"[Source: {source}, Page: {page}]\n"
+                            f"{doc.page_content}"
                         )
 
-                        source_key = (
-                            source_name,
-                            page_number,
-                        )
+                        source_key = (source, page)
 
-                        if source_key not in seen_sources:
+                        if source_key not in seen:
                             sources.append(
-                                {
-                                    "source": source_name,
-                                    "page": page_number,
-                                }
+                                {"source": source, "page": page}
                             )
-                            seen_sources.add(source_key)
+                            seen.add(source_key)
 
                     context = "\n\n---\n\n".join(context_parts)
 
-                    # Step C: Prepare conversation history.
-                    # Exclude the current question, which was just appended.
-                    chat_history = []
+                    history = []
 
-                    for message in st.session_state.messages[:-1]:
-                        if message["role"] == "user":
-                            chat_history.append(
-                                f"User: {message['content']}"
-                            )
-                        elif message["role"] == "assistant":
-                            chat_history.append(
-                                f"Assistant: {message['content']}"
+                    for item in st.session_state.messages[:-1]:
+                        if item["role"] == "user":
+                            history.append(f"User: {item['content']}")
+                        elif item["role"] == "assistant":
+                            history.append(
+                                f"Assistant: {item['content']}"
                             )
 
-                    history_text = "\n".join(chat_history)
+                    history_text = (
+                        "\n".join(history) or "No previous conversation."
+                    )
 
-                    # Step D: Prompt the model with history + retrieved text.
                     prompt = ChatPromptTemplate.from_template(
                         """
-You are DocuMind AI, a helpful document question-answering assistant.
+You are DocuMind AI, a PDF question-answering assistant.
 
-Use the conversation history to understand follow-up questions.
-Use the relevant document passages as the source of factual answers.
+Answer the CURRENT QUESTION using only facts directly supported by
+the supplied PDF passages. Do not use general knowledge or facts
+from model training.
 
-Rules:
-1. Base factual answers on the provided document passages.
-2. Use conversation history to understand questions like
-   "What are its advantages?" or "Explain that again".
-3. Previous AI answers are context, not proof that a fact is true.
-4. If the answer cannot be found in the passages, say:
-   "I couldn't find that information in the uploaded documents."
-5. Answer clearly in simple language.
-6. Do not invent facts or source citations.
-7. If a question is ambiguous, use the conversation history
-   to interpret it when possible.
+Instructions:
+- Identify the subject and intent of the current question first.
+- Use only passages relevant to the current question.
+- Ignore passages about unrelated topics.
+- Conversation history is only for resolving follow-up references,
+  never evidence.
+- If the passages do not directly support an answer, reply exactly:
+  "I couldn't find that information in the uploaded documents."
+- If only some requested facts are supported, state only those facts.
+- Do not add unsupported facts, examples, or definitions.
+- Do not include citation labels or empty bullet lists in the answer.
+- Keep the answer clear and concise.
 
-Previous conversation:
+Conversation history (context only):
 {history}
 
-Relevant document passages:
+Retrieved PDF passages (possible evidence):
 {context}
 
 Current question:
@@ -684,56 +599,47 @@ Answer:
 """
                     )
 
-                    chain = prompt | get_chat_model()
-
-                    response = chain.invoke(
+                    response = (prompt | get_chat_model()).invoke(
                         {
-                            "history": (
-                                history_text
-                                if history_text
-                                else "No previous conversation."
-                            ),
+                            "history": history_text,
                             "context": context,
                             "question": question,
                         }
                     )
 
-                    answer = response.content
+                    answer = extract_response_text(response)
 
-                    # Display the answer.
-                    st.markdown(answer)
+                    if not answer or answer == FALLBACK_MESSAGE:
+                        answer = FALLBACK_MESSAGE
+                        sources = []
+                    else:
+                        answer = clean_answer(answer)
 
-                    # Display sources for this answer.
-                    if sources:
-                        with st.expander("📎 View source citations"):
-                            for source in sources:
-                                st.markdown(
-                                    f"- **{source['source']}** "
-                                    f"— Page {source['page']}"
-                                )
+                st.markdown(answer)
+                show_sources(sources)
 
-                    # Save answer and citations for future turns.
-                    st.session_state.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": answer,
-                            "sources": sources,
-                        }
-                    )
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": answer,
+                        "sources": sources,
+                    }
+                )
 
-                except Exception as error:
-                    error_message = (
-                        "Sorry, I couldn't generate an answer. "
-                        "Check that Ollama is running and that both "
-                        f"models are installed. Details: {error}"
-                    )
+            except Exception as error:
+                error_message = (
+                    "Sorry, I couldn't generate an answer. "
+                    "Check GOOGLE_API_KEY in Streamlit Secrets and "
+                    "your Gemini chat API quota. Details: "
+                    f"{error}"
+                )
 
-                    st.error(error_message)
+                st.error(error_message)
 
-                    st.session_state.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": error_message,
-                            "sources": [],
-                        }
-                    )
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": error_message,
+                        "sources": [],
+                    }
+                )
