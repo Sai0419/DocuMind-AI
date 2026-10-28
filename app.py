@@ -8,6 +8,8 @@ from pypdf import PdfReader
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
@@ -169,7 +171,14 @@ FALLBACK_MESSAGE = (
     "I couldn't find that information in the uploaded documents."
 )
 
-# -------------------- LOCAL EMBEDDINGS --------------------
+
+
+# --------------------------------------------------
+# 3. OLLAMA MODELS
+# --------------------------------------------------
+
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+CHAT_MODEL = "qwen2.5:1.5b"
 
 @st.cache_resource
 def get_embeddings():
@@ -177,6 +186,14 @@ def get_embeddings():
         model_name=EMBEDDING_MODEL,
         model_kwargs={"device": "cpu"},
         encode_kwargs={"normalize_embeddings": True},
+    )
+
+
+@st.cache_resource
+def get_chat_model():
+    return ChatGoogleGenerativeAI(
+        model=CHAT_MODEL,
+        temperature=0,
     )
 
 

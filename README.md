@@ -1,15 +1,10 @@
 # DocuMind AI — Chat with Your PDFs
 
-DocuMind AI is a local AI-powered PDF chatbot that allows users to upload documents and ask questions in natural language. It uses Retrieval-Augmented Generation (RAG) to retrieve relevant information from PDF files and generate answers with source-page references.
-
-The project combines Python, Streamlit, LangChain, FAISS, and Ollama to provide a document question-answering experience without relying on paid cloud AI APIs.
+An AI-powered PDF chatbot that lets you upload PDF documents and ask questions using Retrieval-Augmented Generation (RAG).
 
 ## Application Preview
 
-<!-- Add a screenshot of your working application -->
-<!-- Save it as screenshots/documind-preview.png -->
-
-![DocuMind AI Application Preview](screenshots/documind-ai.png.png)
+![DocuMind AI Application Preview](https://raw.githubusercontent.com/Sai0419/DocuMind-AI/main/screenshot/documind-ai.png.png)
 
 ## Features
 
@@ -49,34 +44,34 @@ The project combines Python, Streamlit, LangChain, FAISS, and Ollama to provide 
 ## Architecture
 
 ```text
-              User
-               |
-               v
-       Streamlit Interface
-               |
-               v
-          PDF Upload
-               |
-               v
-       PDF Text Extraction
-               |
-               v
-          Text Chunking
-               |
-               v
-       Nomic Embeddings
-               |
-               v
-       FAISS Vector Search
-               |
-               v
-      Relevant Text Chunks
-               |
-               v
-      Qwen 2.5 via Ollama
-               |
-               v
-     Answer + Page References
+User
+ |
+ v
+Streamlit Interface
+ |
+ v
+PDF Upload
+ |
+ v
+PDF Text Extraction
+ |
+ v
+Text Chunking
+ |
+ v
+Nomic Embeddings
+ |
+ v
+FAISS Vector Search
+ |
+ v
+Relevant Text Chunks
+ |
+ v
+Qwen 2.5 via Ollama
+ |
+ v
+Answer + Page References
 ```
 
 ## Prerequisites
@@ -129,11 +124,11 @@ ollama pull qwen2.5:1.5b
 ollama pull nomic-embed-text
 ```
 
-These model names should match the configuration in `rag_pipeline.py`.
+Make sure these model names match your application's actual configuration.
 
 ### 5. Configure the Application Password
 
-If the application uses Streamlit secrets for authentication, create the following file in the project root:
+If your application uses Streamlit secrets for authentication, create this file in the project root:
 
 `.streamlit/secrets.toml`
 
@@ -144,7 +139,7 @@ Add:
 password = "YOUR_STRONG_PASSWORD"
 ```
 
-Replace the placeholder with your own strong password. Do not commit this file or publish the password.
+Replace the placeholder with your own strong password. Never commit this file or publish the password.
 
 ### 6. Run the Application
 
@@ -152,14 +147,14 @@ Replace the placeholder with your own strong password. Do not commit this file o
 python -m streamlit run app.py
 ```
 
-Open the local URL displayed in the terminal. By default, Streamlit commonly uses:
+Open the local URL displayed in the terminal. Streamlit commonly uses:
 
 `http://localhost:8501`
 
 ## Example Use Cases
 
 - Ask questions about Python interview preparation PDFs.
-- Find specific information in technical documentation.
+- Find information in technical documentation.
 - Review educational materials and study notes.
 - Retrieve relevant details from lengthy documents.
 - Ask questions about uploaded reports and reference materials.
@@ -169,30 +164,28 @@ Open the local URL displayed in the terminal. By default, Streamlit commonly use
 ```text
 DocuMind-AI/
 ├── .streamlit/
-│   └── secrets.toml       # Local secrets; do not commit
-├── app.py                 # Streamlit application interface
-├── rag_pipeline.py        # RAG and retrieval pipeline
-├── requirements.txt       # Python dependencies
-├── README.md              # Project documentation
-├── .gitignore             # Excluded files and secrets
-└── screenshots/
-    └── documind-preview.png
+│   └── secrets.toml
+├── app.py
+├── rag_pipeline.py
+├── requirements.txt
+├── README.md
+├── .gitignore
+└── screenshot/
+    └── documind-ai.png.png
 ```
 
-The screenshot and secrets paths shown above should exist locally as appropriate. The secrets file must remain excluded from Git.
+**Note:** This structure is an example based on the project's documented files. Ensure the files and screenshot path match your actual repository. Keep `secrets.toml` excluded from Git.
 
 ## Live Demo
 
-**Live Demo:** Add your active demo URL here.
+[**Launch DocuMind AI**](https://locks-neural-boards-payments.trycloudflare.com/)
 
-The demo may use a temporary public tunnel connected to the local application. In that case, the computer, application, internet connection, and tunnel must remain active. The URL may change when the tunnel restarts.
-
-For security, do not upload confidential PDFs or expose local services such as the Ollama API directly to the internet.
+> **Note:** This is a temporary demo hosted through a Cloudflare Quick Tunnel. It is available only while the local Streamlit application and tunnel are running. The URL may change when the tunnel restarts.
 
 ## Source Code
 
-**GitHub Repository:**  
-https://github.com/Sai0419/DocuMind-AI
+- **GitHub Repository:** [DocuMind AI](https://github.com/Sai0419/DocuMind-AI)
+- **GitHub Profile:** [GS](https://github.com/Sai0419)
 
 ## Privacy and Limitations
 
@@ -227,11 +220,9 @@ https://github.com/Sai0419/DocuMind-AI
 
 **GS**
 
-- GitHub Profile: https://github.com/Sai0419
-- Project Repository: https://github.com/Sai0419/DocuMind-AI
+- GitHub: [Sai0419](https://github.com/Sai0419)
+- Project: [DocuMind AI](https://github.com/Sai0419/DocuMind-AI)
 
 ## License
 
-This project does not specify a license yet.
-
-If you want others to reuse, modify, and distribute your code, you can choose an open-source license such as the MIT License. Add a `LICENSE` file with the full license text before claiming that the project is MIT-licensed.
+This project does not currently specify a license. If you want others to reuse, modify, and distribute your code, choose an appropriate open-source license and add a `LICENSE` file before claiming the project is licensed under it.
