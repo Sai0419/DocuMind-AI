@@ -26,7 +26,7 @@ st.set_page_config(
 # -------------------- CONFIGURATION --------------------
 
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-CHAT_MODEL = "gemini-2.5-flash"
+CHAT_MODEL = "gemini-3.8-flash"
 
 FALLBACK_MESSAGE = (
     "I couldn't find that information in the uploaded documents."
