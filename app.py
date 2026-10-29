@@ -6,13 +6,14 @@ from io import BytesIO
 import streamlit as st
 from pypdf import PdfReader
 from langchain_community.vectorstores import FAISS
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+
+# -------------------- PAGE CONFIG --------------------
 
 st.set_page_config(
     page_title="DocuMind AI",
@@ -21,20 +22,33 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+
+# -------------------- CONFIGURATION --------------------
+
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+CHAT_MODEL = "gemini-2.5-flash"
+
+FALLBACK_MESSAGE = (
+    "I couldn't find that information in the uploaded documents."
+)
+
+
 # -------------------- LOGIN --------------------
 
 def check_password():
-    def password_entered():
-        st.session_state["authenticated"] = (
-            st.session_state["password_input"]
-            == st.secrets["auth"]["password"]
-        )
-
     if st.session_state.get("authenticated", False):
         return True
 
+    def password_entered():
+        expected = st.secrets.get("auth", {}).get("password", "")
+        supplied = st.session_state.get("password_input", "")
+        st.session_state["authenticated"] = (
+            bool(expected) and supplied == expected
+        )
+
     st.title("🔐 DocuMind AI Login")
     st.write("Enter your password to access the application.")
+
     st.text_input(
         "Password",
         type="password",
@@ -45,77 +59,95 @@ def check_password():
     if st.session_state.get("authenticated") is False:
         st.error("Incorrect password. Please try again.")
 
-    return False
+    return st.session_state.get("authenticated", False)
 
 
 if not check_password():
     st.stop()
+
 
 # -------------------- STYLING --------------------
 
 st.markdown(
     """
     <style>
-    .stApp {background:#f8fafc;color:#1e293b}
-    [data-testid="stSidebar"] {background:#eaf0f8}
-    [data-testid="stSidebar"] * {color:#1e293b}
-    .stMarkdown,.stMarkdown p,.stMarkdown li,label,
-    [data-testid="stCaptionContainer"] {color:#1e293b}
+    .stApp {
+        background: #f8fafc;
+        color: #1e293b;
+    }
+
+    [data-testid="stSidebar"] {
+        background: #eaf0f8;
+    }
+
+    [data-testid="stSidebar"] * {
+        color: #1e293b;
+    }
+
     .hero {
-        padding:30px;
-        border-radius:18px;
-        background:linear-gradient(135deg,#dbeafe,#e0e7ff);
-        border:1px solid #c7d2fe;
-        margin-bottom:25px
+        padding: 30px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+        border: 1px solid #c7d2fe;
+        margin-bottom: 25px;
     }
-    .hero h1 {color:#1e3a8a;font-size:38px;margin-bottom:8px}
-    .hero p {color:#334155;font-size:16px}
+
+    .hero h1 {
+        color: #1e3a8a;
+        font-size: 38px;
+    }
+
+    .hero p {
+        color: #334155;
+        font-size: 16px;
+    }
+
     .feature-card {
-        background:#fff;
-        border:1px solid #dbe3ef;
-        border-radius:12px;
-        padding:18px;
-        min-height:115px
+        background: #fff;
+        border: 1px solid #dbe3ef;
+        border-radius: 12px;
+        padding: 18px;
+        min-height: 115px;
     }
-    .feature-card h4 {color:#3730a3;margin-bottom:8px}
-    .feature-card p,.small-muted {color:#475569;font-size:14px}
+
+    .feature-card h4 {
+        color: #3730a3;
+    }
+
+    .feature-card p,
+    .small-muted {
+        color: #475569;
+        font-size: 14px;
+    }
+
     div[data-testid="stChatMessage"] {
-        background:#fff;
-        border:1px solid #dbe3ef;
-        border-radius:12px;
-        padding:12px
-    }
-    [data-testid="stChatInput"] textarea {background:#fff;color:#1e293b}
-    [data-testid="stFileUploader"] {
-        background:#fff;
-        border-radius:10px;
-        padding:8px
-    }
-    div.stButton>button {
-        background:#fff;
-        color:#1e3a8a;
-        border-radius:9px;
-        border:1px solid #c7d2fe
-    }
-    div.stButton>button:hover {
-
-        div.stButton>button:hover {
-        background:#e0e7ff;
-        color:#1e3a8a;
-        border-color:#818cf8
+        background: #fff;
+        border: 1px solid #dbe3ef;
+        border-radius: 12px;
+        padding: 12px;
     }
 
-    /* Mobile responsive design */
+    div.stButton > button {
+        background: #fff;
+        color: #1e3a8a;
+        border-radius: 9px;
+        border: 1px solid #c7d2fe;
+    }
+
+    div.stButton > button:hover {
+        background: #e0e7ff;
+        color: #1e3a8a;
+        border-color: #818cf8;
+    }
+
     @media screen and (max-width: 768px) {
         .hero {
             padding: 18px;
             margin-bottom: 16px;
-            border-radius: 14px;
         }
 
         .hero h1 {
             font-size: 27px;
-            line-height: 1.25;
         }
 
         .hero p {
@@ -129,22 +161,9 @@ st.markdown(
             margin-bottom: 10px;
         }
 
-        .feature-card h4 {
-            font-size: 16px;
-        }
-
-        .feature-card p {
-            font-size: 13px;
-        }
-
         div.stButton > button {
             min-height: 44px;
             white-space: normal;
-        }
-
-        [data-testid="stChatMessage"] {
-            padding: 10px;
-            overflow-wrap: anywhere;
         }
 
         .block-container {
@@ -154,31 +173,13 @@ st.markdown(
         }
     }
     </style>
-        background:#e0e7ff;
-        color:#1e3a8a;
-        border-color:#818cf8
-    }
-    </style>
     """,
     unsafe_allow_html=True,
 )
 
-# -------------------- CONFIGURATION --------------------
 
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-CHAT_MODEL = "gemini-3.6-flash"
-FALLBACK_MESSAGE = (
-    "I couldn't find that information in the uploaded documents."
-)
+# -------------------- MODEL FUNCTIONS --------------------
 
-
-
-# --------------------------------------------------
-# 3. OLLAMA MODELS
-# --------------------------------------------------
-
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-CHAT_MODEL = "gemini-2.5-flash"
 @st.cache_resource
 def get_embeddings():
     return HuggingFaceEmbeddings(
@@ -190,20 +191,17 @@ def get_embeddings():
 
 @st.cache_resource
 def get_chat_model():
+    api_key = st.secrets.get("GOOGLE_API_KEY")
+
+    if not api_key:
+        raise RuntimeError(
+            "GOOGLE_API_KEY is missing from Streamlit Secrets."
+        )
+
     return ChatGoogleGenerativeAI(
         model=CHAT_MODEL,
         temperature=0,
-    )
-
-
-# -------------------- GEMINI CHAT MODEL --------------------
-
-@st.cache_resource
-def get_chat_model():
-    return ChatGoogleGenerativeAI(
-        model=CHAT_MODEL,
-        temperature=0,
-        google_api_key=st.secrets["GOOGLE_API_KEY"],
+        google_api_key=api_key,
     )
 
 
@@ -252,6 +250,7 @@ def extract_response_text(response):
 
     if isinstance(content, list):
         parts = []
+
         for item in content:
             if isinstance(item, dict) and item.get("type") == "text":
                 parts.append(item.get("text", ""))
@@ -289,7 +288,9 @@ def build_vector_store(uploaded_files):
             reader = PdfReader(BytesIO(raw))
 
             if reader.is_encrypted:
-                raise ValueError("This PDF is password-protected.")
+                raise ValueError(
+                    "This PDF is password-protected."
+                )
 
             total_pages += len(reader.pages)
 
@@ -320,7 +321,6 @@ def build_vector_store(uploaded_files):
     if not chunks:
         return None, collection_hash, total_pages, 0, file_names
 
-    # Embeddings are generated locally; this step does not use Gemini embeddings.
     vector_store = FAISS.from_documents(
         chunks,
         get_embeddings(),
@@ -353,6 +353,7 @@ with st.sidebar:
 
     st.divider()
     st.markdown("### 📊 Document statistics")
+
     st.metric("PDF files", len(st.session_state.uploaded_names))
     st.metric("Total pages", st.session_state.total_pages)
     st.metric("Text chunks", st.session_state.total_chunks)
@@ -375,14 +376,6 @@ with st.sidebar:
     st.caption("Embeddings: Local HuggingFace model")
     st.caption("Chat generation: Google Gemini API")
 
-    st.divider()
-    st.markdown(
-        '<p class="small-muted">'
-        'PDF embeddings run locally. Answer generation uses Gemini API.'
-        '</p>',
-        unsafe_allow_html=True,
-    )
-
 
 # -------------------- MAIN PAGE --------------------
 
@@ -390,8 +383,10 @@ st.markdown(
     """
     <div class="hero">
       <h1>📚 DocuMind AI</h1>
-      <p>Chat with your PDF documents using Retrieval-Augmented Generation
-      (RAG), semantic search and conversation memory.</p>
+      <p>
+        Chat with your PDF documents using Retrieval-Augmented Generation,
+        semantic search and conversation memory.
+      </p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -415,6 +410,7 @@ for col, (heading, body) in zip(cols, cards):
 
 st.write("")
 
+
 # -------------------- BUILD OR UPDATE INDEX --------------------
 
 if uploaded_files:
@@ -427,9 +423,7 @@ if uploaded_files:
     current_hash = current_hasher.hexdigest()
 
     if current_hash != st.session_state.collection_hash:
-        with st.spinner(
-            "Reading PDFs and building the local search index..."
-        ):
+        with st.spinner("Reading PDFs and building the local search index..."):
             try:
                 store, new_hash, pages, chunks, names = build_vector_store(
                     uploaded_files
@@ -456,10 +450,8 @@ if uploaded_files:
                 st.session_state.vector_store = None
                 st.error(
                     "Could not build the document index. "
-                    "Check the local embedding model installation and "
-                    f"available memory. Details: {error}"
+                    f"Details: {error}"
                 )
-
 else:
     if st.session_state.collection_hash is not None:
         st.session_state.vector_store = None
@@ -538,18 +530,21 @@ if question and question.strip():
                     .similarity_search_with_score(question, k=6)
                 )
 
-                retrieved_docs = [doc for doc, _score in scored_docs]
+                retrieved_docs = [
+                    doc for doc, _score in scored_docs
+                ]
 
                 if not retrieved_docs:
                     answer, sources = FALLBACK_MESSAGE, []
-
                 else:
                     context_parts = []
                     sources = []
                     seen = set()
 
                     for doc in retrieved_docs:
-                        source = doc.metadata.get("source", "Unknown PDF")
+                        source = doc.metadata.get(
+                            "source", "Unknown PDF"
+                        )
                         page = doc.metadata.get("page", "Unknown")
 
                         context_parts.append(
@@ -571,14 +566,17 @@ if question and question.strip():
 
                     for item in st.session_state.messages[:-1]:
                         if item["role"] == "user":
-                            history.append(f"User: {item['content']}")
+                            history.append(
+                                f"User: {item['content']}"
+                            )
                         elif item["role"] == "assistant":
                             history.append(
                                 f"Assistant: {item['content']}"
                             )
 
                     history_text = (
-                        "\n".join(history) or "No previous conversation."
+                        "\n".join(history)
+                        or "No previous conversation."
                     )
 
                     prompt = ChatPromptTemplate.from_template(
@@ -590,22 +588,19 @@ the supplied PDF passages. Do not use general knowledge or facts
 from model training.
 
 Instructions:
-- Identify the subject and intent of the current question first.
 - Use only passages relevant to the current question.
-- Ignore passages about unrelated topics.
 - Conversation history is only for resolving follow-up references,
   never evidence.
 - If the passages do not directly support an answer, reply exactly:
   "I couldn't find that information in the uploaded documents."
 - If only some requested facts are supported, state only those facts.
 - Do not add unsupported facts, examples, or definitions.
-- Do not include citation labels or empty bullet lists in the answer.
 - Keep the answer clear and concise.
 
 Conversation history (context only):
 {history}
 
-Retrieved PDF passages (possible evidence):
+Retrieved PDF passages:
 {context}
 
 Current question:
@@ -626,8 +621,7 @@ Answer:
                     answer = extract_response_text(response)
 
                     if not answer or answer == FALLBACK_MESSAGE:
-                        answer = FALLBACK_MESSAGE
-                        sources = []
+                        answer, sources = FALLBACK_MESSAGE, []
                     else:
                         answer = clean_answer(answer)
 
@@ -643,14 +637,14 @@ Answer:
                 )
 
             except Exception as error:
+                # Detailed traceback is visible in Streamlit for debugging.
+                st.exception(error)
+
                 error_message = (
                     "Sorry, I couldn't generate an answer. "
-                    "Check GOOGLE_API_KEY in Streamlit Secrets and "
-                    "your Gemini chat API quota. Details: "
-                    f"{error}"
+                    "Check the Gemini model, GOOGLE_API_KEY in Streamlit "
+                    "Secrets, and your API quota. See the error above."
                 )
-
-                st.error(error_message)
 
                 st.session_state.messages.append(
                     {
